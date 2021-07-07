@@ -1,0 +1,79 @@
+    @FXML
+    private StackPane rootPane;
+    @FXML
+    private AnchorPane contentPane;  
+
+ private Stage getStage() {
+        return (Stage) tableView.getScene().getWindow();
+    }
+	
+	=======================================================================
+  private void exportAsPDF(ActionEvent event) {
+        List<List> printData = new ArrayList<>();
+        String[] headers = {"SI", "BOOK ID", "      BOOK NAME       ", "    HOLDER NAME     ", 
+		"ISSUE DATE", "DAYS ELAPSED", "FINE"};
+        printData.add(Arrays.asList(headers));
+        for (IssueInfo info : list) {
+            List<String> row = new ArrayList<>();
+            row.add(String.valueOf(info.getId()));
+            row.add(info.getBookID());
+            row.add(info.getBookName());
+            row.add(info.getHolderName());
+            row.add(info.getDateOfIssue());
+            row.add(String.valueOf(info.getDays()));
+            row.add(String.valueOf(info.getFine()));
+            printData.add(row);
+        }
+        LibraryAssistantUtil.initPDFExprot(rootPane, contentPane, getStage(), printData);
+    }
+	====================================================================================
+	
+	
+    public static void initPDFExprot(StackPane rootPane, Node contentPane, Stage stage, List<List> data) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save as PDF");
+        FileChooser.ExtensionFilter extFilter
+                = new FileChooser.ExtensionFilter("PDF files (*.pdf)", "*.pdf");
+        fileChooser.getExtensionFilters().add(extFilter);
+        File saveLoc = fileChooser.showSaveDialog(stage);
+        ListToPDF ltp = new ListToPDF();
+        boolean flag = ltp.doPrintToPdf(data, saveLoc, ListToPDF.Orientation.LANDSCAPE);
+        JFXButton okayBtn = new JFXButton("Okay");
+        JFXButton openBtn = new JFXButton("View File");
+        openBtn.setOnAction((ActionEvent event1) -> {
+            try {
+                Desktop.getDesktop().open(saveLoc);
+            } catch (Exception exp) {
+                AlertMaker.showErrorMessage("Could not load file", "Cant load file");
+            }
+        });
+        if (flag) {
+            AlertMaker.showMaterialDialog(rootPane, contentPane, Arrays.asList(okayBtn, openBtn), 
+			"Completed", "Member data has been exported.");
+        }
+    }
+	=============================================
+	   public static void showMaterialDialog(StackPane root, Node nodeToBeBlurred, List<JFXButton> controls, String header, String body) {
+        BoxBlur blur = new BoxBlur(3, 3, 3);
+        if (controls.isEmpty()) {
+            controls.add(new JFXButton("Okay"));
+        }
+        JFXDialogLayout dialogLayout = new JFXDialogLayout();
+        JFXDialog dialog = new JFXDialog(root, dialogLayout, JFXDialog.DialogTransition.TOP);
+
+        controls.forEach(controlButton -> {
+            controlButton.getStyleClass().add("dialog-button");
+            controlButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent mouseEvent) -> {
+                dialog.close();
+            });
+        });
+
+        dialogLayout.setHeading(new Label(header));
+        dialogLayout.setBody(new Label(body));
+        dialogLayout.setActions(controls);
+        dialog.show();
+        dialog.setOnDialogClosed((JFXDialogEvent event1) -> {
+            nodeToBeBlurred.setEffect(null);
+        });
+        nodeToBeBlurred.setEffect(blur);
+    }
